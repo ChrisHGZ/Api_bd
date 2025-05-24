@@ -6,6 +6,8 @@
 
 1. Clonar el repositorio
 
-2. Iniciar la dockerización de mysql `docker-compose up -d`
+2. instalar los paquetes con `yarn`
 
-3. Compilar el proyecto `yarn start:dev`
+3. Iniciar la dockerización de mysql `docker-compose up -d`
+
+4. Compilar el proyecto `yarn start:dev`
