@@ -48,6 +48,10 @@ export class FilesController {
       throw new BadRequestException('make sure that the file is not empty');
     }
 
-    const secureUrl = ``;
+    const secureUrl = `${this._configService.get('HOST_API')}/files/product/${
+      file.filename
+    }`;
+
+    return { secureUrl, fileName: file.filename };
   }
 }

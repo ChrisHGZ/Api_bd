@@ -30,8 +30,8 @@ export class CreateProductDto {
   @IsPositive()
   stock: number;
 
+  @IsString({ each: true })
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
   images?: string[];
 }
