@@ -8,6 +8,8 @@
 
 2. instalar los paquetes con `yarn`
 
-3. Iniciar la dockerización de mysql `docker-compose up -d`
+3. Renombre el `.env.template` a `.env`
 
-4. Compilar el proyecto `yarn start:dev`
+4. Iniciar la dockerización de mysql `docker-compose up -d`
+
+5. Compilar el proyecto `yarn start:dev`
