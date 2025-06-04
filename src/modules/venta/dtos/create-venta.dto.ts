@@ -17,10 +17,6 @@ class CreateVentaProductoDto {
   @IsInt()
   @Min(1)
   cantidad: number;
-
-  @IsInt()
-  @Min(0)
-  precioUnitario: number;
 }
 
 export class CreateVentaDto {

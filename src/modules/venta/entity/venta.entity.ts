@@ -7,7 +7,7 @@ export class Venta extends StandardEntity {
   @Column('datetime', { nullable: false })
   fecha: Date;
 
-  @Column('integer', { nullable: false })
+  @Column('integer', { nullable: false, unique: true })
   nro_boleta: number;
 
   @Column('integer', { nullable: false })

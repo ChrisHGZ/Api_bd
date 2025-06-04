@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { Venta } from './entity/venta.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -19,69 +23,85 @@ export class VentaService {
   ) {}
 
   public async create(createVentaDto: CreateVentaDto) {
-    const { fecha, nro_boleta, ventaProductos } = createVentaDto;
+    try {
+      const { fecha, nro_boleta, ventaProductos } = createVentaDto;
 
-    if (await this.existeBoleta(nro_boleta)) {
-      throw new BadRequestException(`Boleta ${nro_boleta} ya existe`);
-    }
+      if (await this.existeBoleta(nro_boleta)) {
+        throw new BadRequestException(`Boleta ${nro_boleta} ya existe`);
+      }
 
-    let subMonto = 0;
+      let subMonto: number = 0;
+      const productosCreados = [];
 
-    for (const vp of ventaProductos) {
-      subMonto += vp.precioUnitario * vp.cantidad;
-    }
-
-    const iva = subMonto * 0.19;
-    const montoTotal = subMonto + iva;
-
-    const venta = this._ventaRepository.create({
-      fecha,
-      nro_boleta,
-      subMonto,
-      iva,
-      montoTotal,
-    });
-
-    await this._ventaRepository.save(venta);
-
-    const productosCreados = [];
-    for (const vp of ventaProductos) {
-      const producto = await this._productRepository.findOneByOrFail({
-        id: vp.productoId,
+      const venta = this._ventaRepository.create({
+        fecha,
+        nro_boleta,
+        subMonto: 0,
+        iva: 0,
+        montoTotal: 0,
       });
 
-      const ventaProducto = this._ventaProductoRepository.create({
-        venta,
-        producto,
-        cantidad: vp.cantidad,
-        precioUnitario: vp.precioUnitario,
-        montoTotal: vp.precioUnitario * vp.cantidad,
-      });
+      await this._ventaRepository.save(venta);
 
-      await this._ventaProductoRepository.save(ventaProducto);
+      for (const vp of ventaProductos) {
+        const producto = await this._productRepository.findOneByOrFail({
+          id: vp.productoId,
+        });
 
-      producto.stock -= vp.cantidad;
-      await this._productRepository.save(producto);
+        const precioUnitario = producto.precio;
+        const montoTotalProducto = precioUnitario * vp.cantidad;
+        subMonto += montoTotalProducto;
 
-      productosCreados.push({
-        productoId: producto.id,
-        codigo: producto.codigo,
-        nombre: producto.nombre,
-        cantidad: vp.cantidad,
-        precioUnitario: vp.precioUnitario,
-        montoTotal: vp.precioUnitario * vp.cantidad,
-      });
+        const ventaProducto = this._ventaProductoRepository.create({
+          venta,
+          producto,
+          cantidad: vp.cantidad,
+          precioUnitario,
+          montoTotal: montoTotalProducto,
+        });
+
+        await this._ventaProductoRepository.save(ventaProducto);
+
+        if (producto.stock < vp.cantidad) {
+          throw new BadRequestException(
+            `No hay stock suficiente para el producto ${producto.nombre}`,
+          );
+        }
+
+        producto.stock -= vp.cantidad;
+        await this._productRepository.save(producto);
+
+        productosCreados.push({
+          productId: producto.id,
+          codigo: producto.codigo,
+          nombre: producto.nombre,
+          cantidad: vp.cantidad,
+          precioUnitario,
+          montoTotal: montoTotalProducto,
+        });
+      }
+
+      const iva = subMonto * 0.19;
+      const montoTotal = subMonto + iva;
+
+      venta.subMonto = subMonto;
+      venta.iva = iva;
+      venta.montoTotal = montoTotal;
+
+      await this._ventaRepository.save(venta);
+
+      return {
+        id: venta.id,
+        fecha: venta.fecha,
+        nro_boleta: venta.nro_boleta,
+        subMonto,
+        iva,
+        montoTotal,
+        productos: productosCreados,
+      };
+    } catch (error) {
+      this.handleDBErrors(error);
     }
-
-    return {
-      id: venta.id,
-      fecha: venta.fecha,
-      nro_boleta: venta.nro_boleta,
-      subMonto: venta.subMonto,
-      iva: venta.iva,
-      montoTotal: venta.montoTotal,
-      productos: productosCreados,
-    };
   }
 
   private existeBoleta(nro_boleta: number) {
@@ -89,5 +109,14 @@ export class VentaService {
       nro_boleta: nro_boleta,
       status: status.ACTIVE,
     });
+  }
+
+  private handleDBErrors(error: any) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      throw new BadRequestException(error.sqlMessage);
+    }
+    throw new InternalServerErrorException(
+      'Unexpected error, check server logs',
+    );
   }
 }
