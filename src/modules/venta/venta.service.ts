@@ -60,7 +60,7 @@ export class VentaService {
           montoTotal: montoTotalProducto,
         });
 
-        await this._ventaProductoRepository.save(ventaProducto);
+      await this._ventaProductoRepository.save(ventaProducto);
 
         producto.stock -= vp.cantidad;
         await this._productRepository.save(producto);
@@ -84,70 +84,15 @@ export class VentaService {
 
       await this._ventaRepository.save(venta);
 
-      return {
-        id: venta.id,
-        fecha: venta.fecha,
-        nro_boleta: venta.nro_boleta,
-        subMonto,
-        iva,
-        montoTotal,
-        productos: productosCreados,
-      };
-    } catch (error) {
-      this.handleDBErrors(error);
-    }
-  }
-
-  public async findAll() {
-    const queryBuilder = this._ventaRepository.createQueryBuilder('venta');
-
-    const venta = await queryBuilder
-      .leftJoinAndSelect('venta.VentaProductos', 'ventaProductos')
-      .leftJoinAndSelect('ventaProductos.producto', 'producto')
-      .where('venta.status = :status', { status: status.ACTIVE })
-      .getMany();
-
-    if (!venta) throw new BadRequestException(`No existen ventas`);
-
-    return venta;
-  }
-
-  public async findOne(id: string) {
-    const queryBuilder = this._ventaRepository.createQueryBuilder('venta');
-
-    const venta = await queryBuilder
-      .leftJoinAndSelect('venta.VentaProductos', 'ventaProductos')
-      .leftJoinAndSelect('ventaProductos.producto', 'producto')
-      .where('venta.id = :id', { id })
-      .andWhere('venta.status = :status', { status: status.ACTIVE })
-      .getOne();
-
-    if (!venta) throw new BadRequestException('No existe la venta');
-
-    return venta;
-  }
-
-  public async remove(id: string) {
-    const venta = await this.findOne(id);
-
-    if (!venta) throw new BadRequestException('No existe la venta');
-
-    try {
-      venta.status = status.INACTIVE;
-      await this._ventaRepository.save(venta);
-
-      for (const vp of venta.VentaProductos) {
-        vp.producto.stock += vp.cantidad;
-        await this._productRepository.save(vp.producto);
-
-        vp.status = status.INACTIVE;
-        await this._ventaProductoRepository.save(vp);
-      }
-
-      return { message: 'Venta anulada' };
-    } catch (error) {
-      this.handleDBErrors(error);
-    }
+    return {
+      id: venta.id,
+      fecha: venta.fecha,
+      nro_boleta: venta.nro_boleta,
+      subMonto: venta.subMonto,
+      iva: venta.iva,
+      montoTotal: venta.montoTotal,
+      productos: productosCreados,
+    };
   }
 
   private existeBoleta(nro_boleta: number) {
@@ -155,19 +100,5 @@ export class VentaService {
       nro_boleta: nro_boleta,
       status: status.ACTIVE,
     });
-  }
-
-  private handleDBErrors(error: any) {
-    if (error.code === 'ER_DUP_ENTRY') {
-      throw new BadRequestException(error.sqlMessage);
-    }
-
-    if (error) {
-      throw new BadRequestException(error);
-    }
-
-    throw new InternalServerErrorException(
-      'Unexpected error, check server logs',
-    );
   }
 }
