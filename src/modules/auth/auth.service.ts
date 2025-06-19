@@ -13,7 +13,6 @@ import { JwtPayload } from './interfaces';
 import { LoginUserDto } from './dtos/login-user.dto';
 import { status } from '../shared/status-entity.enum';
 
-
 @Injectable()
 export class AuthService {
   constructor(
@@ -37,7 +36,7 @@ export class AuthService {
       delete user.password;
 
       return {
-        ...user,
+        user: user,
         token: this.getJwtToken({ id: user.id }),
       };
     } catch (error) {
@@ -62,7 +61,7 @@ export class AuthService {
     delete user.password;
 
     return {
-      ...user,
+      user: user,
       token: this.getJwtToken({ id: user.id }),
     };
   }
