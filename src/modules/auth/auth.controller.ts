@@ -4,6 +4,7 @@ import { CreateUserDto } from './dtos/create-user.dto';
 import { LoginUserDto } from './dtos/login-user.dto';
 import { GetUser } from './decorators/get-user.decorator';
 import { User } from './entity/user.entity';
+import { Auth } from './decorators/auth.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -19,7 +20,8 @@ export class AuthController {
     return this._authService.login(loginUserDto);
   }
 
-  @Get('check-auth-status')
+  @Get('check-status')
+  @Auth()
   checkAuthStatus(@GetUser() user: User) {
     return this._authService.checkAuthStatus(user);
   }
