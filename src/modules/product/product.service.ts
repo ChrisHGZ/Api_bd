@@ -11,6 +11,7 @@ import { CreateProductDto } from './dtos/create-product.dto';
 import { validate as isUUID } from 'uuid';
 import { UpdateProductDto } from './dtos/update-product.dto';
 import { status } from '../shared/status-entity.enum';
+import { User } from '../auth/entity/user.entity';
 
 @Injectable()
 export class ProductService {
@@ -25,7 +26,7 @@ export class ProductService {
     private readonly _dataSource: DataSource,
   ) {}
 
-  public async create(createProductDto: CreateProductDto) {
+  public async create(createProductDto: CreateProductDto, user: User) {
     try {
       const { images = [], ...rest } = createProductDto;
 
@@ -35,6 +36,8 @@ export class ProductService {
           this._productImageRepository.create({ url: image }),
         ),
       });
+
+      product.user = user;
 
       await this._productRepository.save(product);
 

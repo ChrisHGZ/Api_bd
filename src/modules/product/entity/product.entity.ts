@@ -1,6 +1,7 @@
 import { StandardEntity } from '../../standard.entity';
-import { Column, Entity, OneToMany } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { ProductImage } from './product-image.entity';
+import { User } from 'src/modules/auth/entity/user.entity';
 
 @Entity('products')
 export class Product extends StandardEntity {
@@ -24,4 +25,7 @@ export class Product extends StandardEntity {
     cascade: true,
   })
   images?: ProductImage[];
+
+  @ManyToOne(() => User, (user) => user.products, { nullable: false })
+  user: User;
 }

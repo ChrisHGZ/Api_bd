@@ -1,3 +1,4 @@
+import { Product } from 'src/modules/product/entity';
 import { StandardEntity } from 'src/modules/standard.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
 
@@ -15,4 +16,6 @@ export class User extends StandardEntity {
   @Column('varchar', { nullable: false, default: 'USER' })
   roles: string[];
 
+  @OneToMany(() => Product, (product) => product.user, { nullable: false })
+  products: Product[];
 }
