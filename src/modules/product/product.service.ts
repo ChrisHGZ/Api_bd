@@ -47,13 +47,15 @@ export class ProductService {
     }
   }
 
-  async findAll() {
+  async findAll(user: User) {
     const productsQueryBuilder =
       this._productRepository.createQueryBuilder('product');
 
     const products = await productsQueryBuilder
       .leftJoinAndSelect('product.images', 'images')
+      .leftJoinAndSelect('product.user', 'user')
       .where('product.status = :status', { status: status.ACTIVE })
+      .andWhere('user.id = :id', { id: user.id })
       .getMany();
 
     return products.map((product) => ({
@@ -62,14 +64,14 @@ export class ProductService {
     }));
   }
 
-  public async findOne(term: string) {
+  public async findOne(term: string, user: User) {
     let product: Product;
 
     if (isUUID(term)) {
       product = await this._productRepository.findOne({
-        where: { id: term, status: status.ACTIVE },
+        where: { id: term, status: status.ACTIVE, user: { id: user.id } },
 
-        relations: ['images'],
+        relations: ['images', 'user'],
       });
     } else {
       const queryBuilder = this._productRepository.createQueryBuilder('prod');
@@ -91,16 +93,11 @@ export class ProductService {
     return product;
   }
 
-  public async findOnePlain(term: string) {
-    const { images = [], ...rest } = await this.findOne(term);
-
-    return {
-      ...rest,
-      images: images.map((image) => image.url),
-    };
-  }
-
-  public async update(id: string, updateProductDto: UpdateProductDto) {
+  public async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+    user: User,
+  ) {
     const { images, ...toUpdate } = updateProductDto;
 
     const productUpdate = await this._productRepository.preload({
@@ -131,7 +128,7 @@ export class ProductService {
       await queryRunner.commitTransaction();
       await queryRunner.release();
 
-      return this.findOnePlain(id);
+      return this.findOne(id, user);
     } catch (error) {
       await queryRunner.rollbackTransaction();
       await queryRunner.release();
@@ -140,8 +137,8 @@ export class ProductService {
     }
   }
 
-  public async delete(id: string) {
-    const product = await this.findOne(id);
+  public async delete(id: string, user: User) {
+    const product = await this.findOne(id, user);
 
     await this._productRepository.update(product.id, {
       status: status.INACTIVE,

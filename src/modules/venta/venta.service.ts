@@ -10,6 +10,7 @@ import { VentaProducto } from './entity/venta-producto.entity';
 import { Product } from '../product/entity';
 import { CreateVentaDto } from './dtos/create-venta.dto';
 import { status } from '../shared/status-entity.enum';
+import { User } from '../auth/entity/user.entity';
 
 @Injectable()
 export class VentaService {
@@ -22,7 +23,7 @@ export class VentaService {
     private readonly _productRepository: Repository<Product>,
   ) {}
 
-  public async create(createVentaDto: CreateVentaDto) {
+  public async create(createVentaDto: CreateVentaDto, user: User) {
     try {
       const { fecha, nro_boleta, ventaProductos } = createVentaDto;
 
@@ -81,6 +82,7 @@ export class VentaService {
       venta.subMonto = subMonto;
       venta.iva = iva;
       venta.montoTotal = montoTotal;
+      venta.user = user;
 
       await this._ventaRepository.save(venta);
 
@@ -92,19 +94,22 @@ export class VentaService {
         iva: venta.iva,
         montoTotal: venta.montoTotal,
         productos: productosCreados,
+        user: venta.user,
       };
     } catch (error) {
       this.handleDBErrors(error);
     }
   }
 
-  public async findAll() {
+  public async findAll(user: User) {
     const queryBuilder = this._ventaRepository.createQueryBuilder('venta');
 
     const venta = await queryBuilder
       .leftJoinAndSelect('venta.VentaProductos', 'ventaProductos')
       .leftJoinAndSelect('ventaProductos.producto', 'producto')
+      .leftJoinAndSelect('venta.user', 'user')
       .where('venta.status = :status', { status: status.ACTIVE })
+      .andWhere('user.id = :userId', { userId: user.id })
       .getMany();
 
     if (!venta) throw new BadRequestException('No se encontraron ventas');
@@ -112,13 +117,15 @@ export class VentaService {
     return venta;
   }
 
-  public async findOne(id: string) {
+  public async findOne(id: string, user: User) {
     const queryBuilder = this._ventaRepository.createQueryBuilder('venta');
 
     const venta = await queryBuilder
       .leftJoinAndSelect('venta.VentaProductos', 'ventaProductos')
       .leftJoinAndSelect('ventaProductos.producto', 'producto')
+      .leftJoinAndSelect('venta.user', 'user')
       .where('venta.id = :id', { id })
+      .andWhere('user.id = :userId', { userId: user.id })
       .andWhere('venta.status = :status', { status: status.ACTIVE })
       .getOne();
 
@@ -127,8 +134,8 @@ export class VentaService {
     return venta;
   }
 
-  public async remove(id: string) {
-    const venta = await this.findOne(id);
+  public async remove(id: string, user: User) {
+    const venta = await this.findOne(id, user);
 
     if (!venta) throw new BadRequestException('Venta no encontrada');
 

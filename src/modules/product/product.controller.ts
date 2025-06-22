@@ -27,14 +27,14 @@ export class ProductController {
 
   @Get()
   @Auth()
-  findAll() {
-    return this._productService.findAll();
+  findAll(@GetUser() user: User) {
+    return this._productService.findAll(user);
   }
 
   @Get(':term')
   @Auth()
-  findOne(@Param('term') term: string) {
-    return this._productService.findOnePlain(term);
+  findOne(@Param('term') term: string, @GetUser() user: User) {
+    return this._productService.findOne(term, user);
   }
 
   @Patch(':id')
@@ -42,13 +42,14 @@ export class ProductController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateProductDto: UpdateProductDto,
+    @GetUser() user: User,
   ) {
-    return this._productService.update(id, updateProductDto);
+    return this._productService.update(id, updateProductDto, user);
   }
 
   @Delete(':id')
   @Auth()
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this._productService.delete(id);
+  remove(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
+    return this._productService.delete(id, user);
   }
 }
