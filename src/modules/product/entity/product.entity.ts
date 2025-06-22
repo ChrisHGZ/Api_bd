@@ -5,10 +5,10 @@ import { User } from 'src/modules/auth/entity/user.entity';
 
 @Entity('products')
 export class Product extends StandardEntity {
-  @Column('varchar', { nullable: false, unique: true })
+  @Column('varchar', { nullable: false })
   codigo: string;
 
-  @Column('varchar', { nullable: false, unique: true })
+  @Column('varchar', { nullable: false })
   nombre: string;
 
   @Column('varchar', { nullable: true })
