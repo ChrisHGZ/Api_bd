@@ -37,6 +37,7 @@ export class VentaService {
       const venta = this._ventaRepository.create({
         fecha,
         nro_boleta,
+        user,
         subMonto: 0,
         iva: 0,
         montoTotal: 0,
@@ -82,7 +83,6 @@ export class VentaService {
       venta.subMonto = subMonto;
       venta.iva = iva;
       venta.montoTotal = montoTotal;
-      venta.user = user;
 
       await this._ventaRepository.save(venta);
 
@@ -94,7 +94,7 @@ export class VentaService {
         iva: venta.iva,
         montoTotal: venta.montoTotal,
         productos: productosCreados,
-        user: venta.user,
+        user: user,
       };
     } catch (error) {
       this.handleDBErrors(error);
@@ -169,7 +169,7 @@ export class VentaService {
       throw new BadRequestException(error.sqlMessage);
     }
     throw new InternalServerErrorException(
-      'Unexpected error, check server logs',
+      `${error.message} - Check server logs`,
     );
   }
 }
