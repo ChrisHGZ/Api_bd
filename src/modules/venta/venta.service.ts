@@ -107,6 +107,7 @@ export class VentaService {
     const venta = await queryBuilder
       .leftJoinAndSelect('venta.VentaProductos', 'ventaProductos')
       .leftJoinAndSelect('ventaProductos.producto', 'producto')
+      .leftJoinAndSelect('producto.images', 'images')
       .leftJoinAndSelect('venta.user', 'user')
       .where('venta.status = :status', { status: status.ACTIVE })
       .andWhere('user.id = :userId', { userId: user.id })
@@ -123,6 +124,7 @@ export class VentaService {
     const venta = await queryBuilder
       .leftJoinAndSelect('venta.VentaProductos', 'ventaProductos')
       .leftJoinAndSelect('ventaProductos.producto', 'producto')
+      .leftJoinAndSelect('producto.images', 'images')
       .leftJoinAndSelect('venta.user', 'user')
       .where('venta.id = :id', { id })
       .andWhere('user.id = :userId', { userId: user.id })
